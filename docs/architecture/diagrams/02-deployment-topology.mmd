@@ -1,0 +1,30 @@
+%% KnowIt · 部署拓扑（Lite / POC 档）
+%% 四个容器，一条 docker compose up。
+%% 没有 Elasticsearch、没有 MQ、没有 Nacos、没有 Redis。
+
+flowchart TB
+    subgraph Host["客户服务器（8C16G 起步）"]
+        direction TB
+
+        subgraph Stack["docker compose: knowit"]
+            APP["knowit-server<br/>Spring Boot 3.5 · JVM 21<br/>heap 512M–1G"]
+            PG[("PostgreSQL 16 + pgvector<br/>shared_buffers 1G")]
+            TEI["text-embeddings-inference:cpu<br/>bge-m3 + bge-reranker-v2-m3"]
+            LLM["llama.cpp server<br/>Qwen3-1.7B-Q8（POC 档）"]
+        end
+
+        subgraph PERSIST["持久化命名卷"]
+            VOL1[("pgdata")]
+            VOL2[("models")]
+            VOL3[("documents")]
+        end
+    end
+
+    OPS["运维人员"] -->|":8080"| APP
+    APP --> PG
+    APP --> TEI
+    APP --> LLM
+    PG --> VOL1
+    TEI --> VOL2
+    LLM --> VOL2
+    APP --> VOL3

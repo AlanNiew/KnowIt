@@ -1,0 +1,43 @@
+%% KnowIt · 系统上下文图
+%% 关键性质：除 Docker 内部网络外，没有任何一条边通向机房外。
+%% 模型层全部走 OpenAI 兼容 HTTP 契约，DashScope 仅存在于开发 profile。
+
+flowchart TB
+    subgraph Client["客户端（零构建）"]
+        UI["htmx 单页 UI<br/>SSE 流式对话 + 引用脚注"]
+    end
+
+    subgraph KnowIt["KnowIt 应用边界（单进程，虚拟线程）"]
+        API["REST + SSE API"]
+        ING["IngestionPipeline<br/>ETL 状态机"]
+        RET["HybridRetriever<br/>双路检索 + RRF + rerank"]
+        GEN["AnswerComposer<br/>证据分级 + 摘录/AI 双模式"]
+        IAM["AccessPolicy<br/>检索期强制过滤"]
+    end
+
+    subgraph Local["本机 / 内网 · 数据层"]
+        PG[("PostgreSQL 16 + pgvector<br/>业务 + 向量 HNSW + 中文全文")]
+        OS[("MinIO / 本地磁盘<br/>原始文档 + 切片中间产物")]
+    end
+
+    subgraph Inf["本机 / 内网 · 推理层（OpenAI 兼容 HTTP）"]
+        EMB["TEI · bge-m3<br/>Embedding"]
+        RRK["TEI · bge-reranker-v2-m3<br/>Rerank"]
+        LLM["vLLM / SGLang / llama.cpp<br/>Qwen3 系列"]
+    end
+
+    UI -->|"HTTP + SSE"| API
+    API --> ING
+    API --> RET
+    API --> IAM
+    RET --> GEN
+
+    ING --> PG
+    ING --> OS
+    RET --> PG
+    GEN --> PG
+
+    ING --> EMB
+    RET --> EMB
+    RET --> RRK
+    GEN --> LLM

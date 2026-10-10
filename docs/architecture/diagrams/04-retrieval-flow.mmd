@@ -1,0 +1,43 @@
+%% KnowIt · 一次问答的时序
+%% 三个设计要点：
+%%   1. 权限过滤发生在 SQL 层，不是查回来再筛（ADR-0011）
+%%   2. 证据不足时不调用 LLM（四级证据分级是拒答能力的来源）
+%%   3. 摘录模式不调用 LLM（弱硬件下的默认体验，ADR-0006）
+
+sequenceDiagram
+    autonumber
+    actor U as 用户
+    participant API as REST/SSE
+    participant AP as AccessPolicy
+    participant RET as HybridRetriever
+    participant VEC as pgvector 向量通道
+    participant FTS as PG 全文通道
+    participant RRK as bge-reranker
+    participant EG as EvidenceGrader
+    participant AC as AnswerComposer
+    participant LLM as 本地 LLM
+
+    U->>API: POST /api/kb/{id}/ask
+    API->>AP: 当前用户 → AccessContext
+    AP-->>API: {userId, roles, allowedKbIds}
+
+    API->>RET: retrieve(query, accessCtx, profile)
+    RET->>VEC: topK + ACL 内联过滤（SQL 层）
+    RET->>FTS: topK + ACL 内联过滤（SQL 层）
+    VEC-->>RRK: 向量候选
+    FTS-->>RRK: 关键词候选
+    Note over VEC,RRK: RRF 融合排序（只看排名，不看绝对分数）
+    RRK-->>API: 校准后 topN（child 命中的 parent 展开）
+
+    API->>EG: 证据分级
+    alt 证据 NONE / WEAK
+        EG-->>U: 主动拒答（不调用 LLM）
+    else 证据 PARTIAL / SUFFICIENT
+        alt 摘录模式（POC / 无 GPU 默认）
+            AC-->>U: 原文片段 + 高亮 + 页码
+        else AI 总结模式（标准档默认）
+            AC->>LLM: structured output
+            LLM-->>U: 答案 + 引用（SSE）
+            Note over AC,LLM: 引用交叉校验：模型编造的 chunkId 被丢弃
+        end
+    end

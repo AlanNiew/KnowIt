@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-domain：纯领域层，零第三方依赖。
+  纪律（由 ArchUnit 强制，见 knowit-server/src/test/.../ArchitectureRulesTest.java）：
+   1. 不得 import 任何 org.springframework.* / org.apache.* / com.baomidou.*
+   2. 不得 import 其他任何 knowit-* 业务模块
+  只放：领域实体、值对象、仓储接口、领域服务接口。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-domain</artifactId>
+  <name>KnowIt :: Domain</name>
+  <description>纯领域模型：KnowledgeBase / Document / Chunk / Citation 等，零框架注解</description>
+</project>

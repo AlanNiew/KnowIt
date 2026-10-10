@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-common：零第三方依赖的纯 Java 工具模块。
+  放：统一响应包装、异常体系、分页、领域事件基类。
+  纪律：不允许出现任何 import org.springframework.* / org.apache.*。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-common</artifactId>
+  <name>KnowIt :: Common</name>
+  <description>零依赖基础能力：响应包装、异常体系、分页</description>
+</project>

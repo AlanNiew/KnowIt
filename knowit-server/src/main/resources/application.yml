@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: knowit
+
+  # 数据源是必需项。知识库产品没有"无数据库运行"这种模式——
+  # 那样的部署只会启动成功然后每次查询都失败，比启动失败更难排查。
+  # 数据库没起来时，这里会给出明确的 connection refused，而不是
+  # "Failed to determine a suitable driver class" 这种天书。
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:knowit}
+    username: ${DB_USER:knowit}
+    password: ${DB_PASSWORD:knowit}
+
+  flyway:
+    enabled: true
+    # 迁移脚本的源码在仓库根目录 sql/，打包时由 knowit-server/pom.xml 的
+    # <resources> 并入 classpath:db/migration。ADR-0012。
+    locations: classpath:db/migration
+    # 迁移脚本一旦发布永不修改（ADR-0012）。validate 能在启动时就挡住误改，
+    # 而不是等到现场升级失败。
+    validate-on-migrate: true
+    baseline-on-migrate: false
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  threads:
+    virtual:
+      # 虚拟线程。这是 RAG 管道大量阻塞 I/O 的场景，收益明显。
+      # Java 21 要求显式开启（21 的虚拟线程是 preview）。
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    root: INFO
+    com.knowit: DEBUG
+    org.flywaydb: INFO
+
+knowit:
+  # 摘录模式优先是产品形态决策，见 docs/adr/0006-excerpt-first-answering-mode.md
+  answering:
+    default-style: EXCERPT
+  # 本地推理端点。T0.3 接好 OpenAI 兼容客户端后正式启用。
+  inference:
+    chat-base-url: ${KNOWIT_LLM_URL:http://localhost:11434/v1}
+    embedding-base-url: ${KNOWIT_EMBEDDING_URL:http://localhost:8081}

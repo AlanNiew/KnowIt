@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-server：装配模块。Controller / 配置 / 静态资源 / 启动类都在这里。
+  依赖 iam / ingestion / retrieval / generation，是唯一知道 Spring 上下文全部细节的模块。
+
+  T0.1 骨架阶段只引入 web + actuator + 测试底座。
+  T0.2 起追加：spring-boot-starter-data-jdbc、postgresql、flyway-core、spring-ai-openai。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-server</artifactId>
+  <name>KnowIt :: Server</name>
+  <description>装配：REST/SSE API、配置、静态前端、Spring Boot 启动</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-domain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-ingestion</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-retrieval</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-generation</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- ============ 数据层（T0.2） ============ -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <!--
+      Flyway 10 起把数据库方言拆成独立模块，不加这个启动会报
+      "No Flyway database plugin found for PostgreSQL"。
+      版本由 spring-boot-dependencies 统一管理，不要写死版本号。
+    -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+
+    <!-- ============ 测试 ============ -->
+    <dependency>
+      <groupId>com.tngtech.archunit</groupId>
+      <artifactId>archunit-junit5</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!--
+      迁移脚本的源码位置是仓库根目录的 sql/（便于评审、diff、以及交付现场直接查阅），
+      但 Flyway 的默认 classpath:db/migration 在 jar 里。这里把 sql/ 在打包时
+      并入 classpath 的 db/migration，两边同时满足。
+
+      改了本段记得验证：mvn package 后 unzip -l knowit-server/target/*.jar | grep migration
+    -->
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+      </resource>
+      <resource>
+        <directory>${project.basedir}/../sql</directory>
+        <targetPath>db/migration</targetPath>
+        <filtering>false</filtering>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>com.knowit.server.KnowItApplication</mainClass>
+          <!-- eval 是独立 CLI，不并进可执行 jar -->
+          <excludes>
+            <exclude>
+              <groupId>com.knowit</groupId>
+              <artifactId>knowit-eval</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

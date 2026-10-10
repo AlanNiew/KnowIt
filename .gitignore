@@ -1,0 +1,55 @@
+# ---------- Maven ----------
+target/
+*.jar.original
+dependency-reduced-pom.xml
+release.properties
+
+# ---------- IDE ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+nbproject/
+*.swp
+*.swo
+*~
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 本地环境 ----------
+*.env
+!.env.example
+application-local.yml
+application-local.yaml
+!**/application-local.yml.template
+
+# ---------- 日志 ----------
+logs/
+*.log
+
+# ---------- 敏感数据 ----------
+# 评测集可能含企业敏感内容，绝不入库
+secrets/
+*.pem
+*.key
+*.p12
+*.jks
+!**/test/resources/**/*.p12
+
+# ---------- 模型与数据 ----------
+/models/
+/data/
+/documents/
+*.gguf
+*.safetensors
+
+# ---------- 构建产物 ----------
+knowit-server/target/*.jar
+!knowit-server/target/*-sources.jar

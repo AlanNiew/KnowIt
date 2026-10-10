@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KnowIt Checkstyle 配置。
+  取向：抓真正会出事的问题（未用 import、星号导入、缺大括号、超长行、tab、行尾空格），
+  不搞学术规范（不强制 Javadoc、不强制 final 参数、不强制 else 换行）——
+  2-3 人团队被格式噪音淹没的话，规范就会被整体忽略。
+
+  升级前先跑：mvn spotless:apply && mvn checkstyle:check
+-->
+<!DOCTYPE module PUBLIC
+    "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+    "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+  <property name="severity" value="warning"/>
+  <property name="fileExtensions" value="java, properties, xml"/>
+
+  <!-- ============ 文件级 ============ -->
+  <module name="NewlineAtEndOfFile"/>
+  <module name="FileTabCharacter"/>
+  <module name="LineLength">
+    <property name="fileExtensions" value="java"/>
+    <property name="max" value="120"/>
+    <property name="ignorePattern"
+              value="^package.*|^import.*|a href|href|http://|https://|ftp://|^ *\* *[^ ]+$"/>
+  </module>
+
+  <!-- ============ 空白 ============ -->
+  <module name="FileLength">
+    <property name="max" value="1500"/>
+  </module>
+  <module name="TreeWalker">
+    <module name="OuterTypeFilename"/>
+    <module name="AvoidEscapedUnicodeCharacters">
+      <property name="allowEscapesForControlCharacters" value="true"/>
+      <property name="allowByTailComment" value="true"/>
+    </module>
+    <module name="AvoidStarImport"/>
+    <module name="OneTopLevelClass"/>
+    <module name="UnusedImports"/>
+    <module name="RedundantImport"/>
+    <module name="NeedBraces"/>
+    <module name="LeftCurly"/>
+    <module name="RightCurly"/>
+    <module name="WhitespaceAround">
+      <property name="allowEmptyConstructors" value="true"/>
+      <property name="allowEmptyMethods" value="true"/>
+      <property name="allowEmptyTypes" value="true"/>
+      <property name="allowEmptyLoops" value="true"/>
+      <property name="allowEmptyLambdas" value="true"/>
+      <property name="allowEmptyCatches" value="true"/>
+      <property name="ignoreEnhancedForColon" value="true"/>
+    </module>
+    <module name="WhitespaceAfter"/>
+    <module name="NoWhitespaceBefore"/>
+    <module name="NoWhitespaceAfter">
+      <property name="allowLineBreaks" value="true"/>
+      <!--
+        TYPECAST 刻意不在列表内：
+        google-java-format（Google Java Style）要求类型转换后必须有一个空格，
+        即 (int) x；而 Checkstyle 的 NoWhitespaceAfter 默认把 TYPECAST 算进去，
+        两者直接冲突。保留 gjf 的写法，从检查项里移除 TYPECAST。
+      -->
+      <property name="tokens"
+                value="ARRAY_INIT, AT, INC, DEC, UNARY_MINUS, UNARY_PLUS, BNOT, LNOT, DOT, INDEX_OP, METHOD_REF"/>
+    </module>
+    <module name="GenericWhitespace"/>
+
+    <!-- ============ 命名 ============ -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+    </module>
+    <module name="TypeName">
+      <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="MemberName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
+    <module name="ParameterName">
+      <property name="format" value="^[a-z]([a-zA-Z0-9]*)?$"/>
+    </module>
+    <module name="LocalVariableName">
+      <property name="format" value="^[a-z]([a-zA-Z0-9]*)?$"/>
+    </module>
+    <module name="ConstantName">
+      <property name="format" value="^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+    </module>
+    <module name="LocalFinalVariableName">
+      <property name="format" value="^[a-z]([a-zA-Z0-9]*)?$"/>
+    </module>
+    <module name="StaticVariableName"/>
+
+    <!-- ============ 修饰与结构 ============ -->
+    <module name="ModifierOrder"/>
+    <module name="RedundantModifier"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="InterfaceIsType"/>
+    <module name="MutableException"/>
+    <module name="ThrowsCount">
+      <property name="max" value="4"/>
+    </module>
+    <module name="VisibilityModifier">
+      <!-- P0 阶段 domain 用 record，不会触发 -->
+      <property name="protectedAllowed" value="true"/>
+      <property name="publicMemberPattern" value="^serialVersionUID$"/>
+    </module>
+
+    <!-- ============ 代码卫生 ============ -->
+    <module name="EmptyBlock"/>
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignore"/>
+      <property name="commentFormat" value=".*"/>
+    </module>
+    <module name="EqualsHashCode"/>
+    <module name="StringLiteralEquality"/>
+    <module name="NestedIfDepth">
+      <property name="max" value="3"/>
+    </module>
+    <module name="NestedTryDepth">
+      <property name="max" value="2"/>
+    </module>
+    <module name="CyclomaticComplexity">
+      <property name="max" value="12"/>
+    </module>
+    <module name="MethodLength">
+      <property name="max" value="200"/>
+      <property name="countEmpty" value="true"/>
+    </module>
+    <module name="MethodCount">
+      <property name="maxTotal" value="60"/>
+    </module>
+    <module name="IllegalCatch">
+      <property name="illegalClassNames"
+                value="java.lang.Exception, java.lang.Throwable, java.lang.RuntimeException"/>
+    </module>
+    <module name="FallThrough"/>
+    <module name="MissingSwitchDefault"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+
+    <!-- ============ Javadoc（只卡公共 API 的存在性，不卡内容质量） ============ -->
+    <module name="MissingJavadocType">
+      <property name="scope" value="protected"/>
+    </module>
+    <module name="MissingJavadocMethod">
+      <property name="scope" value="public"/>
+      <property name="minLineCount" value="20"/>
+      <property name="allowedAnnotations" value="Override, Test, BeforeEach, AfterEach, ParameterizedTest"/>
+    </module>
+  </module>
+
+  <!-- ============ 尾随空格 ============ -->
+  <module name="RegexpSingleline">
+    <property name="format" value="\s+$"/>
+    <property name="minimum" value="0"/>
+    <property name="maximum" value="0"/>
+    <property name="message" value="Line has trailing spaces."/>
+  </module>
+</module>

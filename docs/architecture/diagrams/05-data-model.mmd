@@ -1,0 +1,113 @@
+%% KnowIt · 核心数据模型 ER 图
+%% 设计原则：
+%%   1. KnowledgeBase 是一等公民，与协作组织分离
+%%   2. Chunk 双层级（parent / child），上下文在索引时组织好
+%%   3. chunk 冗余 kb_id 与 ACL，使权限过滤能合并进同一条 SQL
+%%   4. DDL 全部 Flyway 版本化
+%%
+%% 注：CHUNK 通过 parent_id 自引用构成 parent-child 双层结构
+%%    （parent 行 parent_id IS NULL 且 level='PARENT'），
+%%    erDiagram 自引用关系在部分 Mermaid 版本渲染不稳，故不在图中画线。
+
+erDiagram
+    USER ||--o{ KB_MEMBER : "参与"
+    KNOWLEDGE_BASE ||--o{ KB_MEMBER : "包含"
+    USER ||--o{ KNOWLEDGE_BASE : "创建"
+    KNOWLEDGE_BASE ||--o{ DOCUMENT : "收录"
+    KNOWLEDGE_BASE ||--o{ CONVERSATION : "拥有"
+    DOCUMENT ||--|| INGESTION_TASK : "触发"
+    DOCUMENT ||--o{ CHUNK : "被切分为"
+    DOCUMENT ||--o{ DOC_ACL : "受限于"
+    CONVERSATION ||--o{ MESSAGE : "包含"
+    MESSAGE ||--o{ CITATION : "引用"
+    CITATION }o--|| CHUNK : "指向"
+
+    USER {
+        bigint   id            PK
+        varchar  username      UK
+        varchar  password_hash
+        varchar  role          "ADMIN / USER"
+        boolean  enabled
+        timestamptz created_at
+    }
+    KNOWLEDGE_BASE {
+        bigint   id                PK
+        varchar  name
+        text     description
+        bigint   owner_id          FK
+        jsonb    retrieval_profile "切片/检索/回答参数"
+        timestamptz created_at
+    }
+    KB_MEMBER {
+        bigint   kb_id         FK
+        bigint   user_id       FK
+        varchar  role          "OWNER / MANAGER / MEMBER"
+        timestamptz joined_at
+    }
+    DOCUMENT {
+        bigint   id          PK
+        bigint   kb_id       FK
+        varchar  filename
+        varchar  content_type
+        bigint   size_bytes
+        varchar  sha256
+        varchar  blob_uri
+        varchar  status      "PENDING / INDEXED / FAILED"
+        timestamptz created_at
+    }
+    DOC_ACL {
+        bigint   document_id  FK
+        varchar  subject_type "USER / ROLE / GROUP"
+        varchar  subject_id
+        varchar  effect       "ALLOW / DENY"
+    }
+    INGESTION_TASK {
+        bigint   id             PK
+        bigint   document_id    FK
+        varchar  state          "PENDING / PARSED / CLEANED / CHUNKED / EMBEDDED / INDEXED / COMPLETED / FAILED / DEAD"
+        int      retry_count
+        text     error_message
+        jsonb    step_payload
+        timestamptz updated_at
+    }
+    CHUNK {
+        bigint   id         PK
+        bigint   kb_id      "冗余，权限过滤用"
+        bigint   document_id FK
+        bigint   parent_id  FK "child 指向 parent，parent 为 NULL"
+        text     content
+        varchar  level      "PARENT / CHILD"
+        int      ordinal    "在父切片内的序号"
+        int      page_start
+        int      page_end
+        int      char_start "原文偏移，用于高亮定位"
+        text     tokens_joined "jieba 分词后空格连接"
+        tsvector tsv           "生成列，自动由 tokens_joined 派生"
+        vector   embedding  "vector(1024)，child 才有"
+        timestamptz created_at
+    }
+    CONVERSATION {
+        bigint   id      PK
+        bigint   kb_id   FK
+        bigint   user_id FK
+        varchar  title
+        timestamptz created_at
+    }
+    MESSAGE {
+        bigint   id              PK
+        bigint   conversation_id FK
+        varchar  role            "USER / ASSISTANT"
+        text     content
+        varchar  evidence_level  "NONE / WEAK / PARTIAL / SUFFICIENT"
+        boolean  answered
+        jsonb    usage
+        timestamptz created_at
+    }
+    CITATION {
+        bigint   id         PK
+        bigint   message_id FK
+        bigint   chunk_id   FK
+        numeric  score      "rerank 校准分"
+        int      page_no
+        text     snippet
+    }

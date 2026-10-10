@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Test (JDK 21)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Make wrapper executable
+        run: chmod +x ./mvnw
+
+      - name: Show toolchain
+        run: |
+          java -version
+          mvn -version
+
+      # 只跑单元测试：CI 不碰真实模型（见 docs/architecture/modules.md 测试分层）
+      - name: Unit tests
+        run: ./mvnw -B -ntp test
+
+      # verify 阶段会依次触发：ArchUnit（test 内）→ failsafe 集成测试
+      #   → spotless:check（格式）→ checkstyle:check（静态检查）→ enforcer
+      - name: Verify (format + style + architecture + package)
+        run: ./mvnw -B -ntp verify
+
+      - name: Archive build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: knowit-server
+          path: knowit-server/target/*.jar
+          retention-days: 7
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 阻止"顺手加一个依赖"式的范围蔓延：新引入的依赖必须出现在 PR 里被看见
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

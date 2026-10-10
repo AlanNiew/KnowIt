@@ -1,0 +1,10 @@
+%% KnowIt · 路线图（约 14 周到生产可用，2-3 人团队）
+%% 每阶段的目标与验收标准见 docs/architecture/roadmap.md
+
+timeline
+    title KnowIt 路线图
+    P0 骨架验证（1-2 周） : 8 Maven 模块骨架 + CI : docker compose 全栈 : 摘录模式优先 + 页码级引用 : 抓包零外网验收
+    P1 文档引擎（3-5 周） : 分片上传 + MinIO : Tika 多格式解析 : Ingestion 状态机 + 断点续跑 : 知识库 CRUD + RetrievalProfile
+    P2 检索生成（6-8 周） : RRF 融合 + rerank : query 改写 + 证据分级校准 : 页码级引用 + SSE 流式 : 黄金 50 问评测
+    P3 权限产品化（9-11 周） : RBAC + 文档 ACL + SQL 层过滤 : 管理后台 + 评测 harness : OTel 可观测 + 硬件自检向导 : 部署文档 + 交付手册
+    P4 增强（12-14 周） : SAA Graph Agent 模式 : OCR sidecar : 反馈学习环 : SSO 接入

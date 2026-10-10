@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KnowIt 父 POM。
+
+  设计约定：
+   1. 只用 spring-boot-dependencies 做 BOM 导入，不用 spring-boot-starter-parent
+       —— 这样我们保留一个干净的、自己完全可控的 parent。
+   2. 所有版本号集中在 <properties>，子模块一律不写 <version>。
+   3. 编译用 release 21，不用 source/target 8/11 的老组合。
+   4. Spotless（格式）+ Checkstyle（静态检查）由父 POM 统一配置，
+      checkstyle:check 绑定在 verify 阶段，`mvn test` 快、`mvn package` 严。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.knowit</groupId>
+  <artifactId>knowit-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>KnowIt</name>
+  <description>私有化 RAG 知识库 · 数据不出机房，每一次提问都有据可查</description>
+  <url>https://github.com/knowit-rag/knowit</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <modules>
+    <module>knowit-common</module>
+    <module>knowit-domain</module>
+    <module>knowit-iam</module>
+    <module>knowit-ingestion</module>
+    <module>knowit-retrieval</module>
+    <module>knowit-generation</module>
+    <module>knowit-server</module>
+    <module>knowit-eval</module>
+  </modules>
+
+  <properties>
+    <!-- 构建 -->
+    <java.version>21</java.version>
+    <!--
+      不要用 maven.compiler.release 这个属性名！
+
+      它会被 Maven 全局 settings.xml 里的 profile 覆盖。本机
+      D:\Programing\devEnvironment\apache-maven-3.9.9\conf\settings.xml
+      有一个 jdk-17 profile 设成 activeByDefault=true，把
+      maven.compiler.release 强制为 17，从而让任何 POM 里的 21 失效。
+
+      改用私有属性名 + 显式配置 compiler 插件，保证编译级别不被外部配置篡改。
+      详见 docs/adr/0015-framework-baseline.md 的「环境陷阱」一节。
+    -->
+    <knowit.java.release>21</knowit.java.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <maven.version.required>3.9.9</maven.version.required>
+
+    <!-- 框架基线：见 docs/adr/0015-framework-baseline.md -->
+    <spring-boot.version>3.5.16</spring-boot.version>
+    <spring-ai.version>1.1.8</spring-ai.version>
+
+    <!-- 工具链 -->
+    <archunit.version>1.5.1</archunit.version>
+    <spotless.version>3.10.4</spotless.version>
+    <google-java-format.version>1.24.0</google-java-format.version>
+    <checkstyle.version>10.23.0</checkstyle.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
+
+    <!-- T0.3 起使用（中文分词，见 docs/adr/0004） -->
+    <jieba.version>1.0.2</jieba.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Spring Boot 官方 BOM：接管 flyway / postgresql / testcontainers / junit 等绝大多数版本 -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Spring AI BOM：RAG 骨架（见 docs/adr/0010-spring-ai-rag-as-backbone.md） -->
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- 项目内部模块 -->
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-common</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-domain</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-iam</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-ingestion</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-retrieval</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-generation</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.knowit</groupId>
+        <artifactId>knowit-eval</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- 架构守护 -->
+      <dependency>
+        <groupId>com.tngtech.archunit</groupId>
+        <artifactId>archunit-junit5</artifactId>
+        <version>${archunit.version}</version>
+      </dependency>
+
+      <!-- 中文分词（T0.3 接入，见 docs/adr/0004） -->
+      <dependency>
+        <groupId>com.huaban</groupId>
+        <artifactId>jieba-analysis</artifactId>
+        <version>${jieba.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- 全模块统一测试底座 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <!-- 用私有属性，避免被全局 settings.xml 的 profile 覆盖（见 properties 注释） -->
+            <release>${knowit.java.release}</release>
+            <parameters>true</parameters>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <configuration>
+            <!-- 单元测试并发跑；集成测试（*IT / *IntegrationTest）由 failsafe 在 verify 阶段跑 -->
+            <includes>
+              <include>**/*Test.java</include>
+            </includes>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+              <configuration>
+                <includes>
+                  <include>**/*IT.java</include>
+                  <include>**/*IntegrationTest.java</include>
+                </includes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- 格式：google-java-format AOSP 风格 = 4 空格缩进 -->
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>${spotless.version}</version>
+          <configuration>
+            <!--
+              显式锁定 LF 行尾（Spotless 的枚举叫 UNIX，即 LF）。
+              不设的话默认采用平台行尾：Windows 上产出 CRLF、
+              Linux CI 上产出 LF，同一个文件在两个平台上互相判定为"格式违规"，
+              提交后 CI 必然红。跨平台项目必须在这里写死。
+              配套：仓库根目录的 .gitattributes 也强制 eol=lf。
+            -->
+            <lineEndings>UNIX</lineEndings>
+            <java>
+              <googleJavaFormat>
+                <version>${google-java-format.version}</version>
+                <style>AOSP</style>
+              </googleJavaFormat>
+              <!-- import 顺序：java/jakarta/javax → 第三方 → 静态导入单独一组 -->
+              <importOrder>
+                <order>java|jakarta|javax,,com.knowit,,\#com.knowit,\#</order>
+              </importOrder>
+              <removeUnusedImports/>
+              <formatAnnotations/>
+            </java>
+            <!--
+              刻意不启用 sortPom。
+              它要求 <project> 标签的所有属性挤在一行，并要求属性排序——
+              与本 POM「按用途分组 + 注释」的组织方式冲突，
+              9 个 POM 上收益远低于造成的噪音与 diff 抖动。
+              pom 的整洁靠人工 + .editorconfig（xml 2 空格缩进）维护。
+            -->
+            <!--
+              刻意不启用 markdown 格式化（flexmark）。
+              它会重排 docs/ 下的所有文档，破坏 Mermaid 代码块里的缩进与
+              中文表格的对齐，而且每次改文档都会产生大量无意义 diff。
+              文档格式靠人工 + .editorconfig 维护。
+              改这个决定前请先读 docs/adr/0001 关于"规范要能被执行"的原则。
+            -->
+          </configuration>
+          <executions>
+            <execution>
+              <id>spotless-check</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <!-- 静态检查：绑定 verify，`mvn test` 不受影响 -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <configuration>
+            <configLocation>config/checkstyle/checkstyle.xml</configLocation>
+            <suppressionsLocation>config/checkstyle/suppressions.xml</suppressionsLocation>
+            <consoleOutput>true</consoleOutput>
+            <failsOnError>true</failsOnError>
+            <violationSeverity>warning</violationSeverity>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <sourceDirectories>
+              <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+            </sourceDirectories>
+          </configuration>
+          <executions>
+            <execution>
+              <id>checkstyle-check</id>
+              <phase>verify</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+
+        <!-- 架构守护 -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>enforce-versions</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>[${maven.version.required},)</version>
+                  </requireMavenVersion>
+                  <requireJavaVersion>
+                    <version>[21,)</version>
+                  </requireJavaVersion>
+                  <banDuplicatePomDependencyVersions/>
+                  <dependencyConvergence/>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- Spring Boot 打包 -->
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
+  <repositories>
+    <!-- Spring AI GA 版本已在 Maven Central。
+         若将来需要 milestone/RC/SNAPSHOT，取消下面注释。 -->
+    <!--
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+    -->
+  </repositories>
+</project>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<!--
+  Checkstyle 抑制规则。
+
+  纪律：每一条抑制都必须写明理由和适用范围，并且尽量用 files 精确限定文件。
+  「全局关掉某个检查」不是抑制，应该去改 checkstyle.xml 并说明原因。
+-->
+<suppressions>
+
+  <!--
+    Spring Boot 启动类必须保留 public 构造器（框架要实例化它），
+    因此不适用 HideUtilityClassConstructor 这条面向"工具类"的规则。
+  -->
+  <suppress files="KnowItApplication\.java$" checks="HideUtilityClassConstructor"/>
+
+</suppressions>

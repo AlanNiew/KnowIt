@@ -1,0 +1,67 @@
+# =============================================================================
+# KnowIt · POC compose（T0.2）
+# =============================================================================
+# 用法：
+#   docker compose -f deploy/compose.poc.yml up -d
+#   docker compose -f deploy/compose.poc.yml logs -f postgres
+#   docker compose -f deploy/compose.poc.yml down          # 保留数据
+#   docker compose -f deploy/compose.poc.yml down -v       # 连数据一起删
+#
+# 为什么这一版只有 postgres：
+#   一次把三个容器（PG + TEI + LLM）全拉起来，出问题时很难判断是谁的问题。
+#   先把 PG 和 Flyway 跑通，再叠加推理层（T0.3）。
+#
+# 迁移脚本不放在这里：schema 的唯一真相源是应用内 Flyway（仓库根目录 sql/）。
+# 见 docs/adr/0012-flyway-versioned-ddl.md。
+# =============================================================================
+
+name: knowit-poc
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: knowit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-knowit}
+      POSTGRES_USER: ${DB_USER:-knowit}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-knowit}
+      # 显式 UTF8 编码 + C 排序规则。
+      # 编码必须是 UTF8（要存中文）；排序规则选 C 而不是 zh_CN.UTF-8 或 ICU，
+      # 是因为 C 排序在任何 Linux 发行版上都存在，而 zh_CN 在麒麟/精简镜像上
+      # 经常缺失，会导致 initdb 直接失败。知识库的排序靠检索相关性而非
+      # ORDER BY，所以牺牲拼音排序是划算的。
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      # 只绑本机回环。数据库绝不应该暴露在局域网里（ADR-0011 的第一道防线）。
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # 用 pg_isready 而不是端口探测：端口开了不等于能接受查询。
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-knowit} -d ${DB_NAME:-knowit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    command:
+      - postgres
+      # 私有化现场常见内存紧张，把 shared_buffers 压到 1GB（ADR-0003 的内存预算）
+      - -c
+      - shared_buffers=1GB
+      # knowledge_chunk 的向量索引内存开销大，预留更多 work_mem
+      - -c
+      - work_mem=32MB
+      # max_connections 保守：虚拟线程不代表可以无限开连接
+      - -c
+      - max_connections=100
+      # 让慢查询能被 pg_stat_activity 抓到，ADR-0011 的 ACL 子查询要重点观察
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_lock_waits=on
+
+volumes:
+  pgdata:
+    name: knowit-pgdata

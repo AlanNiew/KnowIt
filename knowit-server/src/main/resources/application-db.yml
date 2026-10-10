@@ -1,0 +1,33 @@
+# =============================================================================
+# 数据层调优 overlay —— 用 SPRING_PROFILES_ACTIVE=db 激活（deploy/compose.poc.yml）
+# =============================================================================
+# 这里只放"调优项"，不放"必需项"。
+# 连不连数据库由 application.yml 的 spring.datasource 决定，
+# compose 环境通过 DB_HOST / DB_PORT / DB_USER / DB_PASSWORD 注入，无需 profile。
+#
+# 之所以把调优项单独拆出来：
+#   本地开发想换连接池大小、想关掉 Flyway 校验做实验时，
+#   不必去改 application.yml（那是所有环境共用的基线）。
+# =============================================================================
+
+spring:
+  datasource:
+    hikari:
+      # 虚拟线程 + 有界连接池：RAG 管道是 I/O 密集，但连接数仍要有上限，
+      # 否则一次导入 200 份文档可能瞬间打满 PG 的 max_connections。
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: 10000
+      max-lifetime: 1800000
+      pool-name: knowit-cp
+
+  flyway:
+    locations: classpath:db/migration
+    # 现场库量大时开启并行迁移能缩短停机窗口；小库上并行反而更慢。
+    parallel-enabled: false
+
+knowit:
+  retrieval:
+    # 单次查询的候选上限。CPU 档的 rerank 每条约 20-60ms，
+    # 候选翻倍就是延迟翻倍（见 docs/architecture/hardware-tiers.md）。
+    default-top-k: ${KNOWIT_TOP_K:20}

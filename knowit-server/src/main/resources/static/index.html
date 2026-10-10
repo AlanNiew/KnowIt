@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KnowIt · 私有化 RAG 知识库</title>
+  <!--
+    P0 骨架占位页。零构建：htmx + SSE + marked + highlight.js（ADR-0013）。
+    T0.4 会在此补齐：知识库下拉、文档上传与索引进度、对话、引用脚注。
+    依赖通过 static/vendor/ 本地引入，离线部署可用。
+  -->
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+           max-width: 720px; margin: 4rem auto; padding: 0 1rem; color: #1f2933; }
+    h1 { font-size: 1.75rem; margin-bottom: .25rem; }
+    .sub { color: #616e7c; margin-bottom: 2rem; }
+    code { background: #f0f4f8; padding: .15rem .35rem; border-radius: 3px; }
+    ul { line-height: 1.9; }
+  </style>
+</head>
+<body>
+  <h1>KnowIt</h1>
+  <p class="sub">私有化 RAG 知识库 · 数据不出机房，每一次提问都有据可查</p>
+
+  <p>P0 骨架已在运行。<code>GET /ping</code> 返回服务身份：</p>
+  <pre><code hx-get="/ping" hx-trigger="load" hx-swap="innerHTML">正在探测…</code></pre>
+
+  <p><b>下一步（T0.4）本页面将补齐：</b></p>
+  <ul>
+    <li>知识库下拉切换</li>
+    <li>文档上传与索回进度</li>
+    <li>对话输入 + SSE 流式输出</li>
+    <li>引用脚注（含页码，ADR-0014）</li>
+    <li>摘录模式 / AI 总结模式 切换（ADR-0006）</li>
+  </ul>
+
+  <p>完整设计见 <code>docs/architecture/overview.md</code>。</p>
+
+  <script src="/vendor/htmx.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-eval：评测 harness。
+  独立 CLI 入口（CommandLineRunner），**不打进 knowit-server 的 jar**。
+  真实模型只在这里离线调用，CI 绝不碰（见 modules.md 测试分层）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-eval</artifactId>
+  <name>KnowIt :: Eval</name>
+  <description>黄金评测集：recall@k / MRR / 拒答准确率 / 引用页码正确率</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-domain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-retrieval</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-generation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-common</artifactId>
+    </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-retrieval：检索引擎。
+  api/HybridRetriever     深模块（ADR-0008）：进 (Query, AccessContext)，出 EvidenceBundle
+  internal/               RRF 融合、pgvector、PG 全文、rerank 的实现细节
+  纪律：不得依赖 knowit-generation（唯一桥梁是 domain.EvidenceBundle）。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-retrieval</artifactId>
+  <name>KnowIt :: Retrieval</name>
+  <description>双路召回 + RRF 融合 + rerank + 证据分级</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-domain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-common</artifactId>
+    </dependency>
+  </dependencies>
+</project>

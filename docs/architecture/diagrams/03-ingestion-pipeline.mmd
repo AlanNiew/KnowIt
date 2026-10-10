@@ -1,0 +1,26 @@
+%% KnowIt · Ingestion 状态机
+%% 数据库驱动（ingestion_task 表是唯一真相源），每步产物落库，可断点续跑。
+%% 对应 ADR-0007。
+
+stateDiagram-v2
+    [*] --> PENDING
+
+    PENDING --> PARSED : reader 提取原文 + 元数据
+    PARSED --> CLEANED : 去噪 / 编码归一 / 页眉页脚剔除
+    CLEANED --> CHUNKED : 结构感知切片 + parent-child 组织
+    CHUNKED --> EMBEDDED : child chunk → bge-m3 向量化
+    EMBEDDED --> INDEXED : pgvector 写入 + jieba 分词 → tsvector
+    INDEXED --> COMPLETED
+
+    COMPLETED --> [*]
+
+    PENDING --> FAILED : 任一步骤异常
+    PARSED --> FAILED
+    CLEANED --> FAILED
+    CHUNKED --> FAILED
+    EMBEDDED --> FAILED
+    INDEXED --> FAILED
+
+    FAILED --> PENDING : retry_count 未达上限（回到上一步）
+    FAILED --> DEAD : 超过重试上限
+    DEAD --> [*]

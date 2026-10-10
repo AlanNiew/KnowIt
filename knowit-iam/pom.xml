@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-iam：身份与权限。
+  api/AccessContext      检索期的权限上下文（ADR-0011 的必传入参）
+  api/AccessPolicy       User → AccessContext 的解析
+  spis/AuthenticationProvider  本地账号密码 / OIDC / LDAP 的扩展点（P3 接入）
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-iam</artifactId>
+  <name>KnowIt :: IAM</name>
+  <description>用户、角色、权限、检索期访问控制</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-domain</artifactId>
+    </dependency>
+  </dependencies>
+</project>

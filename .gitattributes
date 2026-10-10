@@ -1,0 +1,31 @@
+# 行尾符统一为 LF。
+#
+# 为什么必须有这个文件：
+#   本项目开发者在 Windows（IntelliJ / git for Windows 默认可能写出 CRLF），
+#   而 CI 跑在 Linux。若不声明，同一个源文件会在两种平台上被 git 与
+#   Spotless 互相判定为"已修改/格式违规"，导致 CI 必然失败或产生满屏假 diff。
+#
+#   Spotless 侧在 pom.xml 里也已显式设置 <lineEndings>LF</lineEndings>，
+#   两处一起才完备：.gitattributes 管 git 检出/入库，Spotless 管格式化。
+
+# 默认：文本文件按 LF 检出与入库，git 自动识别二进制
+* text=auto eol=lf
+
+# 明确标注为二进制，避免 git 尝试做行尾转换
+*.jar   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.pdf   binary
+*.gguf  binary
+*.onnx  binary
+*.zip   binary
+
+# Windows 专用脚本保留 CRLF，否则 cmd 可能解析异常
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# 生成的迁移/快照类文件不参与 diff 噪音
+*.min.js linguist-generated=true

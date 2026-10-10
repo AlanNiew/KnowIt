@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  knowit-generation：回答组装。
+  api/AnswerComposer      深模块（ADR-0008）：进 EvidenceBundle，出带引用的答案
+  internal/               Prompt 组装、structured output、SSE 流式、引用交叉校验
+  纪律：不得依赖 knowit-retrieval。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.knowit</groupId>
+    <artifactId>knowit-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>knowit-generation</artifactId>
+  <name>KnowIt :: Generation</name>
+  <description>证据分级、摘录/AI 双模式、Prompt 组装、引用溯源</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-domain</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.knowit</groupId>
+      <artifactId>knowit-common</artifactId>
+    </dependency>
+  </dependencies>
+</project>
